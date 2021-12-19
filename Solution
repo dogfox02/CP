@@ -1,1 +1,92 @@
-dsfdsfs
+/*
+parents('Артём', 'Андрей', 'Света').
+parents('Андрей', 'Валентин', 'Вера').
+parents('Валентин', 'Пётр', 'Клава').
+parents('Вера', 'Папа', 'Мама').
+parents('Нюра', 'Папа', 'Мама').
+parents('Ола', 'Кумыс', 'Нюра').
+parents('Пиво', 'Аркадий', 'Ола').
+parents('Зубр', 'Пётр', 'Клава').
+parents('Кирилл', 'Зубр', 'Жасмин').
+parents('Ангелина', 'Кирилл', 'Шура').
+parents('Света', 'Саша', 'Надя').
+parents('Дима', 'Саша', 'Надя').
+parents('Ангелина', 'Дима', 'Юля').
+parents('Надя', 'Вася', 'Маша').
+parents('Галя', 'Вася', 'Маша').
+parents('Таня', 'Андрей', 'Света').
+parents('Олег', 'Александр', 'Галя').
+parents('Вика', 'Олег', 'Ольга').
+*/
+
+father(A,B):- parents(B,A,_).
+mother(A,B):- parents(B,_,A).
+husband(A,B):- parents(_,A,B).
+wife(A,B):- parents(_,B,A).
+son_daug(A,B):- father(A,B), mother(A,B).
+bro_sist(A,B):- parents(A,C,D), parents(B,C,D), B\=A.
+grandma(A,B):- son_daug(B,C), parents(C,_,A). 
+grandpa(A,B):- son_daug(B,C), parents(C,A,_). 
+vnuch(A,B):- grandma(B,A), grandpa(B,A).
+uncle_aint(A,B):- son_daug(A,C), bro_sist(C,B). 
+second_bro_sist(A,B):- uncle_aint(A,C), son_daug(B,C).
+tesha(A,B):- husband(A,C), parents(C,_,B).
+test(A,B):- husband(A,C), parents(C,B,_).
+third_bro_sist(A,B):- son_daug(A,C), second_bro_sist(D,C), son_daug(B,D).
+plemyan(A,B):- uncle_aint(B,A).
+/**************************************/
+
+svekrof(A,B):- wife(A,X), parents(X,_,B).    
+
+/* предикат проверки/поиска свекрови и свекра, если считать, что это мать и отец жены соответственно */
+ 
+svekr(A,B):- wife(A,X), parents(X,B,_).
+/**************************************/
+
+
+
+rel(A,B,father):-father(A,B).
+rel(A,B,mother):-mother(A,B).
+rel(A,B,husband):-husband(A,B).
+rel(A,B,wife):-wife(A,B).
+rel(A,B,son_daug):-son_daug(A,B).
+rel(A,B,bro_sist):-bro_sist(A,B).
+rel(A,B,grandma):-grandma(A,B).
+rel(A,B,grandpa):-grandpa(A,B).
+rel(A,B,vnuch):-vnuch(A,B).
+rel(A,B,uncle_aint):-uncle_aint(A,B).
+rel(A,B,second_bro_sist):-second_bro_sist(A,B).
+rel(A,B,tesha):-tesha(A,B).
+rel(A,B,test):-test(A,B).
+rel(A,B,third_bro_sist):-third_bro_sist(A,B).
+rel(A,B,plemyan):-plemyan(A,B).
+rel(A,B,svekrof):-svekrof(A,B).
+rel(A,B,svekr):-svekr(A,B).
+
+
+rel_name([],R, R) :- !.
+rel_name([_], R, R) :- !.
+rel_name([A,B|S], N, R) :-
+rel(A, B, C),
+rel_name([B|S], [C|N], R).
+
+live(A) :- (parents(_,A,_);parents(_,_,A);parents(A,_,_)),!.
+
+move(X, Y) :- rel(X, Y, _).
+
+prolong([X|T], [Y,X|T]) :- move(X, Y), not(member(Y, [X|T])).
+
+integer1(1).
+integer1(M):- integer1(N), M is N+1.
+
+pro_dfs([X|T], X, R, 0) :- reverse([X|T], R).
+pro_dfs(P, Y, F, L) :-
+L > 0, prolong(P, P1),
+L1 is L - 1, pro_dfs(P1, Y, F, L1).
+
+path(A, B, R) :- integer1(D), pro_dfs([A], B, R, D).
+
+relative(A, B, R) :-
+A \= B, live(A), live(B),
+path(B, A, N), rel_name(N, [], R1),
+reverse(R1, R).
